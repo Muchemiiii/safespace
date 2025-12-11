@@ -33,7 +33,7 @@ const Navbar = () => {
     ];
 
     return (
-        <nav className="fixed w-full z-50 top-0 start-0 bg-purple-950 shadow-md border-b border-purple-800/50 dark:bg-gray-900/80 dark:border-gray-700/50 transition-all duration-300">
+        <nav className="fixed w-full z-50 top-0 start-0 bg-purple-950 shadow-md border-b border-purple-800/50 dark:bg-purple-900/80 dark:border-blue-700/50 transition-all duration-300">
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
                 <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse group">
                     <div className="flex items-center justify-center">
@@ -44,7 +44,7 @@ const Navbar = () => {
                     </span>
                 </Link>
                 <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-                    <Link to="/about" className="text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-full text-sm px-6 py-2.5 text-center transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/30">
+                    <Link to="/signin" className="text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-full text-sm px-6 py-2.5 text-center transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/30">
                         Get started
                     </Link>
                     <button

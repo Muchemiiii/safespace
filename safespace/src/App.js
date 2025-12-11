@@ -7,6 +7,8 @@ import Home from './Pages/Home';
 import Dashboard from './Pages/Dashboard';
 import Report from './Pages/Report';
 import About from './Pages/About';
+import Signin from './Pages/Signin';
+import Signup from './Pages/Signup';
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/signin" element={<Signin />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/about" element={<About />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report" element={<Report />} />

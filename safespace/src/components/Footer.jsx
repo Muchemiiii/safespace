@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Heart, Twitter, Facebook, Instagram, Linkedin, Mail, Phone } from 'lucide-react';
+import { Shield, Twitter, Facebook, Instagram, Mail } from 'lucide-react';
 
 const Footer = () => {
     return (
@@ -54,10 +54,6 @@ const Footer = () => {
                             <div className="flex items-start">
                                 <Mail className="w-5 h-5 text-blue-500 mr-3 mt-0.5" />
                                 <span>support@safespace.com</span>
-                            </div>
-                            <div className="flex items-start">
-                                <Phone className="w-5 h-5 text-blue-500 mr-3 mt-0.5" />
-                                <span>+1 (800) SAFE-HELP</span>
                             </div>
                             <div className="p-4 rounded-xl bg-blue-900/20 border border-blue-800 text-blue-200 mt-6">
                                 <p className="font-semibold text-white mb-1">Emergency?</p>

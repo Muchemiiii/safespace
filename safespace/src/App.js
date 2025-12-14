@@ -1,14 +1,17 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
+
 import Home from './Pages/Home';
-import Dashboard from './Pages/Dashboard';
 import Report from './Pages/Report';
 import About from './Pages/About';
 import Signin from './Pages/Signin';
-import Signup from './Pages/Signup';
+import CounselorSignup from './Pages/CounselorSignup';
+import SurvivorSignup from './Pages/SurvivorSignup';
+import Chatbot from './Pages/Chatbot';
+import Logout from './Pages/Logout';
 
 function App() {
   return (
@@ -18,10 +21,12 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/signin" element={<Signin />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/counselor-signup" element={<CounselorSignup />} />
+          <Route path="/survivor-signup" element={<SurvivorSignup />} />
           <Route path="/about" element={<About />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report" element={<Report />} />
+          <Route path="/chat" element={<Chatbot />} />
+          <Route path="/logout" element={<Logout />} />
         </Routes>
         <Footer />
       </div>

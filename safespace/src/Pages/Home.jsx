@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Users,
   MessageCircle,
@@ -75,10 +76,10 @@ const Home = () => {
               in a safe, anonymous environment designed for your mental wellness journey.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transition duration-300 transform hover:scale-105 flex items-center space-x-2">
+              <Link to="/signin" className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transition duration-300 transform hover:scale-105 flex items-center space-x-2">
                 <span>Start Your Journey</span>
                 <ArrowRight className="w-5 h-5" />
-              </button>
+              </Link>
               <button className="border border-gray-300 text-gray-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-white transition duration-300">
                 Learn More
               </button>
@@ -104,7 +105,7 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="py-20 bg-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-800 mb-4">How SafeSpace Helps You</h2>
@@ -173,12 +174,12 @@ const Home = () => {
             Join thousands of others who have found support and community at SafeSpace
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition duration-300 transform hover:scale-105 shadow-lg">
+            <Link to="/signin" className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition duration-300 transform hover:scale-105 shadow-lg">
               Join us Today
-            </button>
-            <button className="border-2 border-white/30 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/10 transition duration-300 backdrop-blur-sm">
+            </Link>
+            <Link to="/chat" className="border-2 border-white/30 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/10 transition duration-300 backdrop-blur-sm flex items-center justify-center">
               Talk to a Specialist
-            </button>
+            </Link>
           </div>
         </div>
       </section>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebase";
 import {
     Shield,
     Eye,
@@ -7,7 +9,7 @@ import {
     Mail,
     Lock,
     ArrowRight,
-    Stethoscope,
+    Heart,
     User,
     CheckCircle,
     AlertCircle
@@ -15,7 +17,7 @@ import {
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
-const Signup = () => {
+const SurvivorSignup = () => {
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -26,57 +28,46 @@ const Signup = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    // Email validation - only letters allowed (no numbers)
+    // Email validation
     const validateEmail = (emailValue) => {
-        const emailRegex = /^[a-zA-Z]+(\.[a-zA-Z]+)*@[a-zA-Z]+\.[a-zA-Z]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(emailValue)) {
-            return 'Email must contain only letters (no numbers). Example: john.doe@gmail.com';
+            return 'Please enter a valid email address';
         }
         return null;
     };
 
-    // Password validation - must be strong
+    // Password validation
     const validatePassword = (passwordValue) => {
-        if (passwordValue.length < 8) {
-            return 'Password must be at least 8 characters long';
-        }
-        if (!/[A-Z]/.test(passwordValue)) {
-            return 'Password must contain at least one uppercase letter';
-        }
-        if (!/[a-z]/.test(passwordValue)) {
-            return 'Password must contain at least one lowercase letter';
-        }
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordValue)) {
-            return 'Password must contain at least one special character (!@#$%^&*...)';
+        if (passwordValue.length < 6) {
+            return 'Password must be at least 6 characters long';
         }
         return null;
     };
+
+
 
     const handleSignup = async (e) => {
         e.preventDefault();
         setError('');
 
-        // Validate name
         if (!name.trim()) {
-            setError('Please enter your full name');
+            setError('Please choose a display name (can be anonymous)');
             return;
         }
 
-        // Validate email
         const emailError = validateEmail(email);
         if (emailError) {
             setError(emailError);
             return;
         }
 
-        // Validate password
         const passwordError = validatePassword(password);
         if (passwordError) {
             setError(passwordError);
             return;
         }
 
-        // Check passwords match
         if (password !== confirmPassword) {
             setError('Passwords do not match');
             return;
@@ -85,35 +76,50 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            // Create user with Firebase Auth
+            // 1. Create user in Firebase Auth
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-            // Update user profile with name
-            await updateProfile(userCredential.user, {
+            // 2. Update display name
+            await updateProfile(user, {
                 displayName: name
             });
 
-            console.log('Counselor registered:', userCredential.user);
+            // 3. Save user data to Firestore
+            await setDoc(doc(db, "Users", user.uid), {
+                uid: user.uid,
+                name: name,
+                email: email,
+                role: "survivor",
+                createdAt: new Date(),
+            });
+
+            console.log("Survivor registered:", user);
             setSuccess(true);
 
-            // Redirect to signin after 2 seconds
+            // 4. Redirect after success
             setTimeout(() => {
-                navigate('/signin');
+                navigate("/about");
             }, 2000);
+
         } catch (error) {
-            console.error('Signup error:', error);
+            console.error("Signup error:", error);
+
             switch (error.code) {
-                case 'auth/email-already-in-use':
-                    setError('An account with this email already exists.');
+                case "auth/email-already-in-use":
+                    setError("An account with this email already exists.");
                     break;
-                case 'auth/invalid-email':
-                    setError('Invalid email address.');
+                case "auth/invalid-email":
+                    setError("Invalid email address.");
                     break;
-                case 'auth/weak-password':
-                    setError('Password is too weak. Please use a stronger password.');
+                case "auth/weak-password":
+                    setError("Password is too weak.");
+                    break;
+                case "auth/operation-not-allowed":
+                    setError("Email/Password login is not enabled in Firebase Console.");
                     break;
                 default:
-                    setError('Failed to create account. Please try again.');
+                    setError(`Failed to create account: ${error.message}`);
             }
         } finally {
             setIsLoading(false);
@@ -124,23 +130,23 @@ const Signup = () => {
         <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-900 pt-20 pb-12">
             {/* Background decorative elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl"></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-rose-500/20 rounded-full blur-3xl"></div>
             </div>
 
             <div className="relative max-w-md mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center mb-4">
-                        <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl">
-                            <Stethoscope className="w-8 h-8 text-white" />
+                        <div className="p-3 bg-gradient-to-r from-pink-500 to-rose-600 rounded-xl">
+                            <Heart className="w-8 h-8 text-white" />
                         </div>
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-2">
-                        Counselor Registration
+                        Join SafeSpace
                     </h1>
                     <p className="text-gray-400">
-                        Create your professional account
+                        Create your private account to start healing
                     </p>
                 </div>
 
@@ -164,10 +170,10 @@ const Signup = () => {
                         )}
 
                         <form onSubmit={handleSignup} className="space-y-5">
-                            {/* Full Name Field */}
+                            {/* Display Name Field */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Full Name
+                                    Display Name (Can be anonymous)
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -177,8 +183,8 @@ const Signup = () => {
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                                        placeholder="Enter your full name"
+                                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
+                                        placeholder="Enter a name you're comfortable with"
                                         required
                                     />
                                 </div>
@@ -197,12 +203,12 @@ const Signup = () => {
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                                        placeholder="john.doe@example.com"
+                                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
+                                        placeholder="your.email@example.com"
                                         required
                                     />
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">Letters only, no numbers</p>
+                                <p className="text-xs text-gray-500 mt-1">We'll never share your email with anyone.</p>
                             </div>
 
                             {/* Password Field */}
@@ -218,8 +224,8 @@ const Signup = () => {
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                                        placeholder="Create a strong password"
+                                        className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
+                                        placeholder="Create a password"
                                         required
                                     />
                                     <button
@@ -230,7 +236,6 @@ const Signup = () => {
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">8+ chars, uppercase, lowercase, special char</p>
                             </div>
 
                             {/* Confirm Password Field */}
@@ -246,7 +251,7 @@ const Signup = () => {
                                         type={showPassword ? 'text' : 'password'}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
                                         placeholder="Confirm your password"
                                         required
                                     />
@@ -254,11 +259,11 @@ const Signup = () => {
                             </div>
 
                             {/* Terms Agreement */}
-                            <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
+                            <div className="p-4 rounded-xl bg-pink-500/10 border border-pink-500/30">
                                 <div className="flex items-start space-x-3">
-                                    <Shield className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                                    <p className="text-xs text-blue-200">
-                                        By registering, you agree to maintain professional conduct and patient confidentiality as per SafeSpace guidelines.
+                                    <Shield className="w-5 h-5 text-pink-400 mt-0.5 flex-shrink-0" />
+                                    <p className="text-xs text-pink-200">
+                                        Your safety and anonymity are our priority. All data is end-to-end encrypted.
                                     </p>
                                 </div>
                             </div>
@@ -267,7 +272,7 @@ const Signup = () => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-blue-500/30 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-rose-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-pink-500/30 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                             >
                                 {isLoading ? (
                                     <>
@@ -283,32 +288,19 @@ const Signup = () => {
                             </button>
                         </form>
 
+
+
                         {/* Sign In Link */}
                         <p className="text-center text-gray-400 mt-6">
                             Already have an account?{' '}
-                            <Link to="/signin" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                            <Link to="/signin" className="text-pink-400 hover:text-pink-300 font-medium transition-colors">
                                 Sign in here
                             </Link>
                         </p>
                     </div>
                 )}
-
-                {/* Trust Indicators */}
-                <div className="mt-8 text-center">
-                    <div className="flex flex-wrap items-center justify-center gap-4 text-gray-400 text-sm">
-                        <div className="flex items-center space-x-2">
-                            <Shield className="w-4 h-4 text-green-400" />
-                            <span>Verified Professionals</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Lock className="w-4 h-4 text-blue-400" />
-                            <span>Secure Platform</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     );
 };
-
-export default Signup;
+export default SurvivorSignup;

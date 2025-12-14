@@ -29,7 +29,6 @@ const Navbar = () => {
 
     const navLinks = [
         { name: 'Home', path: '/' },
-        { name: 'Report', path: '/report' },
     ];
 
     return (
@@ -44,6 +43,9 @@ const Navbar = () => {
                     </span>
                 </Link>
                 <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+                    <Link to="/chat" className="text-white border border-white/30 hover:bg-white/10 font-medium rounded-full text-sm px-4 py-2.5 text-center transition-all mr-2 hidden md:inline-block">
+                        Chat with AI
+                    </Link>
                     <Link to="/signin" className="text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-full text-sm px-6 py-2.5 text-center transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/30">
                         Get started
                     </Link>

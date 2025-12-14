@@ -13,8 +13,9 @@ import {
     CheckCircle,
     AlertCircle
 } from 'lucide-react';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const Signin = () => {
     const navigate = useNavigate();
@@ -66,14 +67,12 @@ const Signin = () => {
         e.preventDefault();
         setError('');
 
-        // Validate email (only letters, no numbers)
         const emailError = validateEmail(email);
         if (emailError) {
             setError(emailError);
             return;
         }
 
-        // Validate password (strong password)
         const passwordError = validatePassword(password);
         if (passwordError) {
             setError(passwordError);
@@ -84,9 +83,24 @@ const Signin = () => {
 
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            console.log('Counselor signed in:', userCredential.user);
-            // Redirect to dashboard after successful login
-            navigate('/dashboard');
+            // Verify Role in Firestore
+            const userDoc = await getDoc(doc(db, "Users", userCredential.user.uid));
+
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.role === 'counselor') {
+                    // Success
+                    console.log('Counselor signed in:', userCredential.user);
+                    navigate('/about');
+                } else {
+                    // Wrong role
+                    setError('Access restricted to Counselors. Please use the Survivor login if you are a survivor.');
+                    await auth.signOut();
+                }
+            } else {
+                setError('User record not found. Please contact support.');
+            }
+
         } catch (error) {
             console.error('Sign in error:', error);
             switch (error.code) {
@@ -96,17 +110,8 @@ const Signin = () => {
                 case 'auth/wrong-password':
                     setError('Incorrect password. Please try again.');
                     break;
-                case 'auth/invalid-email':
-                    setError('Invalid email address.');
-                    break;
-                case 'auth/too-many-requests':
-                    setError('Too many failed attempts. Please try again later.');
-                    break;
-                case 'auth/invalid-credential':
-                    setError('Invalid email or password. Please check and try again.');
-                    break;
                 default:
-                    setError(`Error: ${error.code || error.message}`);
+                    setError('Failed to sign in. Please check your credentials.');
             }
         } finally {
             setIsLoading(false);
@@ -132,7 +137,7 @@ const Signin = () => {
     };
 
     // Anonymous Sign In for Survivors
-    const handleSurvivorSignIn = async (e) => {
+    const handleSurvivorAnonymousSignIn = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
@@ -140,19 +145,60 @@ const Signin = () => {
         // For survivors, we just save their anonymous username locally
         setTimeout(() => {
             setIsLoading(false);
-            localStorage.setItem('survivorUsername', email);
+            localStorage.setItem('survivorUsername', email); // Using email state as username here
             localStorage.setItem('userRole', 'survivor');
             console.log('Survivor entered anonymously:', email);
-            // Redirect to dashboard
-            navigate('/dashboard');
+            navigate('/about');
         }, 1000);
     };
+
+    // Email Sign In for Survivors
+    const handleSurvivorEmailSignIn = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+            // Verify Role
+            const userDoc = await getDoc(doc(db, "Users", userCredential.user.uid));
+
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.role === 'survivor') {
+                    navigate('/about');
+                } else {
+                    setError('Access restricted to Survivors. Please use the Counselor login if you are a counselor.');
+                    await auth.signOut();
+                }
+            } else {
+                // If no doc exists (maybe old user), let them in but warn? Or just let them in.
+                // For now, strict check.
+                setError('User record not found.');
+            }
+        } catch (error) {
+            console.error('Sign in error details:', error);
+            setError(error.message || 'Failed to sign in. Please check your credentials.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
 
     const handleSubmit = (e) => {
         if (selectedRole === 'counselor') {
             handleCounselorSignIn(e);
         } else {
-            handleSurvivorSignIn(e);
+            // Check if it looks like an email (simple check) to decide which handler
+            // or we can add a toggle in UI.
+            // For now, let's assume if it has '@' it's email login, else anonymous
+            if (email.includes('@')) {
+                handleSurvivorEmailSignIn(e);
+            } else {
+                handleSurvivorAnonymousSignIn(e);
+            }
         }
     };
 
@@ -248,17 +294,25 @@ const Signin = () => {
                                 </div>
                             )}
 
-                            {/* SURVIVOR - Anonymous Sign In */}
+                            {/* SURVIVOR - Anonymous OR Email Sign In */}
                             {selectedRole === 'survivor' && (
                                 <>
-                                    <h2 className="text-2xl font-bold text-white mb-2">Anonymous Sign In</h2>
-                                    <p className="text-gray-400 text-sm mb-6">Your privacy is our priority. No email required.</p>
+                                    <h2 className="text-2xl font-bold text-white mb-2">Survivor Sign In</h2>
+                                    <p className="text-gray-400 text-sm mb-6">Enter your username for anonymous access OR your email for full account access.</p>
+
+                                    {/* Error Message */}
+                                    {error && (
+                                        <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start space-x-3">
+                                            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                                            <p className="text-sm text-red-200">{error}</p>
+                                        </div>
+                                    )}
 
                                     <form onSubmit={handleSubmit} className="space-y-5">
-                                        {/* Anonymous Username Field */}
+                                        {/* Username/Email Field */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                Choose a Username
+                                                Username or Email
                                             </label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -269,17 +323,18 @@ const Signin = () => {
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
-                                                    placeholder="e.g., HopefulSoul123"
+                                                    placeholder="Username (Anonymous) OR Email (Account)"
                                                     required
                                                 />
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-2">This can be any name you feel comfortable with</p>
+                                            <p className="text-xs text-gray-500 mt-2">Enter email to log in to your permanent account.</p>
                                         </div>
 
-                                        {/* Optional Password for returning users */}
+                                        {/* Password Field (only useful if email is entered, but we show it always for simplicity or could hide) */}
+                                        {/* Let's show it as "PIN / Password" */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                Create a PIN (Optional)
+                                                Password / PIN
                                             </label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -290,8 +345,8 @@ const Signin = () => {
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
                                                     className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
-                                                    placeholder="4-digit PIN"
-                                                    maxLength={4}
+                                                    placeholder="Password (for email) or PIN (optional for anonymous)"
+                                                // maxLength={4} removed to allow full passwords
                                                 />
                                                 <button
                                                     type="button"
@@ -301,7 +356,7 @@ const Signin = () => {
                                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                                 </button>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-2">Create a PIN to return to your account later</p>
+                                            <p className="text-xs text-gray-500 mt-2">Required if using Email login.</p>
                                         </div>
 
                                         {/* Privacy Notice */}
@@ -328,12 +383,17 @@ const Signin = () => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <span>Enter Anonymously</span>
+                                                    <span>Sign In</span>
                                                     <ArrowRight className="w-5 h-5" />
                                                 </>
                                             )}
                                         </button>
                                     </form>
+
+
+
+                                    {/* Sign Up Link for Survivors */}
+
                                 </>
                             )}
 
@@ -436,7 +496,7 @@ const Signin = () => {
                                     {/* Sign Up Link */}
                                     <p className="text-center text-gray-400 mt-6">
                                         Need to register as a counselor?{' '}
-                                        <Link to="/signup" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                                        <Link to="/counselor-signup" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                                             Apply here
                                         </Link>
                                     </p>
